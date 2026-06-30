@@ -1,0 +1,6 @@
+{
+  "name": "Comutador SIP Bluetooth",
+  "description": "Painel de comutador SIP com discador interativo, gravação de chamadas em tempo real e guia de conexão de áudio Bluetooth entre celular e computador.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
