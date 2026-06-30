@@ -347,10 +347,11 @@ export default function Dialer({ callState, setCallState, sipRegistered, sipConf
     setTimeout(async () => {
       try {
         // Start real mic recording if possible
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(err => {
+        const hasGetMedia = typeof navigator !== 'undefined' && navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function';
+        const stream = hasGetMedia ? await navigator.mediaDevices.getUserMedia({ audio: true }).catch(err => {
           console.warn("Microphone access declined, fallback to simulation audio-only", err);
           return null;
-        });
+        }) : null;
 
         streamRef.current = stream;
 
@@ -434,7 +435,12 @@ export default function Dialer({ callState, setCallState, sipRegistered, sipConf
       // Mix local + remote streams for recording
       let localStream = null;
       try {
-        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const hasGetMedia = typeof navigator !== 'undefined' && navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function';
+        if (hasGetMedia) {
+          localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } else {
+          console.warn("Dispositivos de mídia indisponíveis para gravação de microfone local");
+        }
       } catch (micErr) {
         console.warn("Microfone local recusado:", micErr);
       }
@@ -561,7 +567,12 @@ export default function Dialer({ callState, setCallState, sipRegistered, sipConf
           // Mixagem de áudio local + remoto para gravação real completa
           let localStream = null;
           try {
-            localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const hasGetMedia = typeof navigator !== 'undefined' && navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function';
+            if (hasGetMedia) {
+              localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            } else {
+              console.warn("Dispositivos de mídia indisponíveis para gravação de microfone local");
+            }
           } catch (micErr) {
             console.warn("Microfone local recusado:", micErr);
           }

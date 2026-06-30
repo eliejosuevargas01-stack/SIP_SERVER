@@ -19,6 +19,11 @@ export default function BluetoothBridge({ bluetoothState, setBluetoothState, onD
 
   // Load available audio devices
   const loadDevices = async () => {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices) {
+      console.warn('navigator.mediaDevices is not available in this browser context (likely insecure HTTP).');
+      setPermissionGranted(false);
+      return;
+    }
     try {
       // First try to request permission to get full device labels
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -48,18 +53,27 @@ export default function BluetoothBridge({ bluetoothState, setBluetoothState, onD
       console.warn('Microphone permission not granted yet:', error);
       setPermissionGranted(false);
       // Try listing anyway (will show empty/unlabeled devices in some browsers)
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      setAudioInputs(devices.filter(d => d.kind === 'audioinput'));
-      setAudioOutputs(devices.filter(d => d.kind === 'audiooutput'));
+      if (navigator.mediaDevices && typeof navigator.mediaDevices.enumerateDevices === 'function') {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        setAudioInputs(devices.filter(d => d.kind === 'audioinput'));
+        setAudioOutputs(devices.filter(d => d.kind === 'audiooutput'));
+      }
     }
   };
 
   useEffect(() => {
     loadDevices();
-    // Listen for device changes (e.g. plugging/unplugging bluetooth adapter)
-    navigator.mediaDevices.addEventListener('devicechange', loadDevices);
+    const hasMediaDevices = typeof navigator !== 'undefined' && 
+      !!navigator.mediaDevices && 
+      typeof navigator.mediaDevices.addEventListener === 'function';
+    
+    if (hasMediaDevices) {
+      navigator.mediaDevices.addEventListener('devicechange', loadDevices);
+    }
     return () => {
-      navigator.mediaDevices.removeEventListener('devicechange', loadDevices);
+      if (hasMediaDevices && typeof navigator.mediaDevices.removeEventListener === 'function') {
+        navigator.mediaDevices.removeEventListener('devicechange', loadDevices);
+      }
     };
   }, []);
 

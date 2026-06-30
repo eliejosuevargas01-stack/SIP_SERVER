@@ -38,6 +38,8 @@ export default function WebRTCPeer({
 
   // Join the Signaling Room on mount
   useEffect(() => {
+    if (!roomId) return;
+
     const joinRoom = async () => {
       try {
         await fetch('/api/webrtc/join', {
@@ -70,8 +72,10 @@ export default function WebRTCPeer({
 
   const startPolling = () => {
     stopPolling();
+    if (!roomId) return;
     pollIntervalRef.current = setInterval(async () => {
       try {
+        if (!roomId) return;
         const res = await fetch(`/api/webrtc/poll/${roomId}/${peerId}`);
         if (!res.ok) return;
         const data = await res.json();
@@ -96,6 +100,7 @@ export default function WebRTCPeer({
 
   // Send a signal via the HTTP Broker
   const sendSignal = async (type: 'offer' | 'answer' | 'candidate', payload: any) => {
+    if (!roomId) return;
     try {
       await fetch('/api/webrtc/signal', {
         method: 'POST',
@@ -116,9 +121,13 @@ export default function WebRTCPeer({
 
     // Grab mic stream
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-      localStreamRef.current = stream;
-      stream.getTracks().forEach(track => pc.addTrack(track, stream));
+      if (typeof navigator !== 'undefined' && navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        localStreamRef.current = stream;
+        stream.getTracks().forEach(track => pc.addTrack(track, stream));
+      } else {
+        console.warn("navigator.mediaDevices.getUserMedia is not supported or not available in this context.");
+      }
     } catch (err) {
       console.warn("Erro ao obter microfone. Iniciando sem áudio de saída:", err);
     }
